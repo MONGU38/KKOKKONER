@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>꼬꼬너 - 꼬리에 꼬리를 물어 찾은 너</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .screen {
+            display: none;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .category-btn {
+            padding: 15px 10px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .category-btn:hover, .category-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .match-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .match-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .match-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .match-score {
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .message.sent {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.received {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stats {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 통계 표시 -->
+    <div class="stats" id="stats">
+        <div>가입자: <span id="userCount">0</span>명</div>
+        <div>매칭시도: <span id="matchAttempts">0</span>회</div>
+        <div>채팅시작: <span id="chatStarts">0</span>회</div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">꼬꼬너</div>
+            <div class="subtitle">꼬리에 꼬리를 물어 찾은 너</div>
+        </div>
+
+        <!-- 1. 초기 화면 -->
+        <div class="screen active" id="loginScreen">
+            <div class="card">
+                <h2 style="text-align: center; margin-bottom: 20px;">시작하기</h2>
+                <div class="input-group">
+                    <label>이름 (실명 또는 닉네임)</label>
+                    <input type="text" id="userName" placeholder="홍길동">
+                </div>
+                <div class="input-group">
+                    <label>연락처 (선택사항)</label>
+                    <input type="text" id="userContact" placeholder="010-1234-5678">
+                </div>
+                <button class="btn" onclick="startApp()">꼬꼬너 시작하기</button>
+            </div>
+        </div>
+
+        <!-- 2. 기본 정보 입력 -->
+        <div class="screen" id="basicInfoScreen">
+            <div class="card">
+                <div class="notice">
+                    <strong>[입력시 주의사항]</strong><br>
+                    필드마다 입력할 내용이 많을 경우 반드시 쉼표로 구분해야 하며 띄어쓰기는 무시 가능합니다.
+                </div>
+                
+                <h3 style="margin-bottom: 20px;">기본 정보 입력</h3>
+                
+                <div class="input-group">
+                    <label>이름 (가명, 별명 가능)</label>
+                    <input type="text" id="basicName" placeholder="홍길동, 길동이">
+                </div>
+                
+                <div class="input-group">
+                    <label>태어난 생년월일</label>
+                    <input type="text" id="birthDate" placeholder="1980.05.15">
+                </div>
+                
+                <div class="input-group">
+                    <label>초중고대학과 전공</label>
+                    <textarea id="education" placeholder="서울초등학교, 강남중학교, 서울고등학교, 연세대학교 경영학과"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>부모 이름과 직업</label>
+                    <textarea id="parents" placeholder="아버지 홍철수 공무원, 어머니 김영희 교사"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>형제 이름과 별명</label>
+                    <textarea id="siblings" placeholder="형 홍길순 순이, 누나 홍길자 자자"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>신체 특징 (문신, 점, 불구)</label>
+                    <textarea id="physicalFeatures" placeholder="왼손 검지에 점, 오른팔에 문신"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>많이 아팠던 병명</label>
+                    <textarea id="illnesses" placeholder="어릴 때 폐렴, 맹장염 수술"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>살던 동네 전부</label>
+                    <textarea id="neighborhoods" placeholder="서울 강남구 역삼동, 부산 해운대구 우동"></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>기타 (하고 싶은 이야기들)</label>
+                    <textarea id="others" placeholder="어떤 이야기든 자유롭게 적어주세요"></textarea>
+                </div>
+                
+                <button class="btn" onclick="saveBasicInfo()">저장</button>
+            </div>
+        </div>
+
+        <!-- 3. 카테고리 선택 -->
+        <div class="screen" id="categoryScreen">
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">카테고리 선택</h3>
+                <p style="margin-bottom: 20px; color: #666;">어떤 분을 찾고 계신가요?</p>
+                
+                <div class="category-grid">
+                    <div class="category-btn" onclick="selectCategory('실종아동')">실종아동<br>및 가족</div>
+                    <div class="category-btn" onclick="selectCategory('이산가족')">이산가족</div>
+                    <div class="category-btn" onclick="selectCategory('동네친구')">동네친구</div>
+                    <div class="category-btn" onclick="selectCategory('학교친구')">학교친구</div>
+                    <div class="category-btn" onclick="selectCategory('연인찾기')">연인찾기</div>
+                    <div class="category-btn" onclick="selectCategory('군대친구')">군대친구</div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="showScreen('basicInfoScreen')">기본정보 수정</button>
+            </div>
+        </div>
+
+        <!-- 4. 상세 정보 입력 (학교친구 예시) -->
+        <div class="screen" id="detailInfoScreen">
+            <div class="card">
+                <div class="notice">
+                    <strong>[여러 친구 등록 안내]</strong><br>
+                    한 카테고리에서 여러 명을 찾고 싶다면 각각 따로 저장해주세요. 
+                    예: 동네친구 철수 저장 → 새로 입력 → 동네친구 영희 저장
+                    이렇게 해야 철수와 영희가 각각 나를 찾을 수 있습니다.
+                </div>
+                
+                <h3 id="categoryTitle" style="margin-bottom: 20px;">학교친구 정보</h3>
+                <div id="detailFields">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+                <button class="btn" onclick="saveDetailInfo()">이 친구 정보 저장</button>
+                <button class="btn btn-secondary" onclick="addAnotherFriend()">같은 카테고리 다른 친구 추가</button>
+                <button class="btn btn-secondary" onclick="showScreen('categoryScreen')">카테고리 변경</button>
+                <button class="btn btn-secondary" onclick="findMatches()">찾은 너 보기</button>
+            </div>
+        </div>
+
+        <!-- 5. 매칭 결과 -->
+        <div class="screen" id="matchScreen">
+            <div class="card">
+                <h3 style="margin-bottom: 20px;">찾은 너</h3>
+                <div id="matchResults">
+                    <!-- 매칭 결과가 여기 표시됨 -->
+                </div>
+                <button class="btn btn-secondary" onclick="showScreen('detailInfoScreen')">정보 수정</button>
+                <button class="btn btn-secondary" onclick="showScreen('categoryScreen')">처음으로</button>
+            </div>
+        </div>
+
+        <!-- 6. 채팅방 -->
+        <div class="screen" id="chatScreen">
+            <div class="card">
+                <h3 id="chatPartner" style="margin-bottom: 15px;">채팅방</h3>
+                <div class="chat-container" id="chatContainer">
+                    <div class="message received">안녕하세요! 혹시 저를 기억하시나요?</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeypress="if(event.key==='Enter') sendMessage()">
+                </div>
+                <button class="btn" onclick="sendMessage()">전송</button>
+                <button class="btn btn-secondary" onclick="showScreen('matchScreen')">나가기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentUser = {};
+        let allUsers = [];
+        let userProfiles = []; // 현재 사용자의 여러 프로필들
+        let stats = {
+            userCount: 0,
+            matchAttempts: 0,
+            chatStarts: 0
+        };
+
+        // 카테고리별 필드 정의
+        const categoryFields = {
+            '학교친구': [
+                { label: '이름, 별명', id: 'friendName', placeholder: '김철수, 철수야' },
+                { label: '학교명', id: 'schoolName', placeholder: '서울고등학교' },
+                { label: '학과', id: 'major', placeholder: '문과, 이과, 컴퓨터과' },
+                { label: '잘 하던 과목', id: 'goodSubjects', placeholder: '수학, 영어, 체육' },
+                { label: '친구와 학교에서 해프닝', id: 'schoolMemories', placeholder: '운동회에서 넘어진 일, 시험 커닝 들킨 일' },
+                { label: '소풍 수학여행 어디로', id: 'trips', placeholder: '경주, 제주도, 설악산' },
+            ],
+            '실종아동': [
+                { label: '집의 형태', id: 'houseType', type: 'select', options: ['한옥', '양옥', '다세대', '연립', '아파트'] },
+                { label: '몇층에 살았는지', id: 'floor', placeholder: '2층, 3층' },
+                { label: '대문 색깔', id: 'gateColor', placeholder: '빨간색, 파란색, 나무색' },
+                { label: '집 근처에 있던 것들', id: 'nearbyPlaces', placeholder: '우물, 놀이터, 공원, 지하철역' },
+            ],
+            '동네친구': [
+                { label: '친구 이름, 별명', id: 'friendName', placeholder: '김철수, 철수야' },
+                { label: '자주 놀던 장소', id: 'playPlaces', placeholder: '동네 놀이터, 문방구 앞' },
+                { label: '집의 형태', id: 'houseType', type: 'select', options: ['한옥', '양옥', '다세대', '연립', '아파트'] },
+                { label: '기억에 남는 사건', id: 'memories', placeholder: '같이 혼난 일, 재미있었던 놀이' },
+            ]
+        };
+
+        // 화면 전환
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // 앱 시작
+        function startApp() {
+            const name = document.getElementById('userName').value;
+            const contact = document.getElementById('userContact').value;
+            
+            if (!name) {
+                alert('이름을 입력해주세요.');
+                return;
+            }
+            
+            currentUser.name = name;
+            currentUser.contact = contact;
+            stats.userCount++;
+            updateStats();
+            
+            showScreen('basicInfoScreen');
+        }
+
+        // 기본정보 저장
+        function saveBasicInfo() {
+            const fields = ['basicName', 'birthDate', 'education', 'parents', 'siblings', 'physicalFeatures', 'illnesses', 'neighborhoods', 'others'];
+            
+            fields.forEach(field => {
+                currentUser[field] = document.getElementById(field).value;
+            });
+            
+            showScreen('categoryScreen');
+        }
+
+        // 카테고리 선택
+        function selectCategory(category) {
+            // 선택된 카테고리 하이라이트
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            
+            currentUser.category = category;
+            
+            // 상세 정보 필드 생성
+            createDetailFields(category);
+            
+            setTimeout(() => {
+                showScreen('detailInfoScreen');
+            }, 300);
+        }
+
+        // 상세 정보 필드 생성
+        function createDetailFields(category) {
+            document.getElementById('categoryTitle').textContent = category + ' 정보';
+            const container = document.getElementById('detailFields');
+            container.innerHTML = '';
+            
+            const fields = categoryFields[category] || categoryFields['학교친구'];
+            
+            fields.forEach(field => {
+                const div = document.createElement('div');
+                div.className = 'input-group';
+                
+                if (field.type === 'select') {
+                    div.innerHTML = `
+                        <label>${field.label}</label>
+                        <select id="${field.id}">
+                            <option value="">선택해주세요</option>
+                            ${field.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <label>${field.label}</label>
+                        <textarea id="${field.id}" placeholder="${field.placeholder}"></textarea>
+                    `;
+                }
+                
+                container.appendChild(div);
+            });
+        }
+
+        // 상세정보 저장
+        function saveDetailInfo() {
+            const category = currentUser.category;
+            const fields = categoryFields[category] || categoryFields['학교친구'];
+            
+            // 새 프로필 객체 생성
+            let newProfile = {
+                ...currentUser, // 기본 정보 복사
+                profileId: Date.now(), // 고유 ID
+                timestamp: new Date().toLocaleString()
+            };
+            
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (element) {
+                    newProfile[field.id] = element.value;
+                }
+            });
+            
+            // 현재 사용자의 프로필 목록에 추가
+            userProfiles.push(newProfile);
+            
+            // 전체 사용자 목록에도 추가 (매칭용)
+            allUsers.push({...newProfile});
+            
+            alert(`${category} 정보가 저장되었습니다!\n총 ${userProfiles.length}개의 프로필이 등록되었어요.`);
+            
+            // 입력 필드 초기화
+            clearDetailFields();
+        }
+        
+        // 같은 카테고리 다른 친구 추가
+        function addAnotherFriend() {
+            clearDetailFields();
+            alert('같은 카테고리에서 다른 친구 정보를 입력해주세요.');
+        }
+        
+        // 상세 입력 필드 초기화
+        function clearDetailFields() {
+            const category = currentUser.category;
+            const fields = categoryFields[category] || categoryFields['학교친구'];
+            
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (element) {
+                    element.value = '';
+                }
+            });
+        }
+
+        // 매칭 찾기
+        function findMatches() {
+            stats.matchAttempts++;
+            updateStats();
+            
+            // 간단한 매칭 로직 (실제로는 더 복잡함)
+            const matches = generateSampleMatches();
+            
+            const container = document.getElementById('matchResults');
+            container.innerHTML = '';
+            
+            // 등록된 프로필 수 표시
+            if (userProfiles.length > 0) {
+                const profileInfo = document.createElement('div');
+                profileInfo.style.cssText = 'background: #e3f2fd; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;';
+                profileInfo.innerHTML = `📋 내가 등록한 프로필: <strong>${userProfiles.length}개</strong><br>각 프로필마다 매칭을 시도합니다.`;
+                container.appendChild(profileInfo);
+            }
+            
+            if (matches.length === 0) {
+                container.innerHTML += '<p style="text-align: center; color: #666;">아직 매칭되는 분이 없습니다.<br>더 많은 분들이 가입하면 연결해드릴게요!</p>';
+            } else {
+                matches.forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = 'match-item';
+                    div.onclick = () => startChat(match.name);
+                    div.innerHTML = `
+                        <div class="match-name">${match.name}</div>
+                        <div class="match-score">매칭 점수: ${match.score}점</div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            showScreen('matchScreen');
+        }
+
+        // 샘플 매칭 결과 생성
+        function generateSampleMatches() {
+            const sampleNames = ['김영희', '박철수', '이미영', '정동윤'];
+            return sampleNames.map(name => ({
+                name: name,
+                score: Math.floor(Math.random() * 50) + 50
+            })).sort((a, b) => b.score - a.score);
+        }
+
+        // 채팅 시작
+        function startChat(partnerName) {
+            stats.chatStarts++;
+            updateStats();
+            
+            document.getElementById('chatPartner').textContent = partnerName + '님과의 채팅';
+            showScreen('chatScreen');
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message sent';
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            
+            input.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 자동 응답 (테스트용)
+            setTimeout(() => {
+                const autoReply = document.createElement('div');
+                autoReply.className = 'message received';
+                autoReply.textContent = getAutoReply(message);
+                chatContainer.appendChild(autoReply);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1000);
+        }
+
+        // 자동 응답 생성
+        function getAutoReply(message) {
+            const replies = [
+                '네, 맞아요! 기억나네요.',
+                '정말 오랜만이에요!',
+                '그때 그 일 기억하세요?',
+                '연락처 교환할까요?',
+                '직접 만나서 이야기해요!'
+            ];
+            return replies[Math.floor(Math.random() * replies.length)];
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            document.getElementById('userCount').textContent = stats.userCount;
+            document.getElementById('matchAttempts').textContent = stats.matchAttempts;
+            document.getElementById('chatStarts').textContent = stats.chatStarts;
+        }
+
+        // 데이터 수집 (개발자용)
+        function collectTestData() {
+            return {
+                totalUsers: stats.userCount,
+                matchAttempts: stats.matchAttempts,
+                chatStarts: stats.chatStarts,
+                conversionRate: stats.userCount > 0 ? (stats.matchAttempts / stats.userCount * 100).toFixed(1) + '%' : '0%',
+                chatRate: stats.matchAttempts > 0 ? (stats.chatStarts / stats.matchAttempts * 100).toFixed(1) + '%' : '0%'
+            };
+        }
+
+        // 페이지 로드시 통계 초기화
+        window.onload = function() {
+            updateStats();
+        };
+    </script>
+</body>
+</html>
